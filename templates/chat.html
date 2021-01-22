@@ -21,19 +21,35 @@
             height: auto;
             vertical-align: middle;
         }
+        .chatbox {
+            margin-top: 16px;
+            margin-right: 16px;
+            margin-bottom: 16px;
+            border-style: inset;
+            border-width: 2px;
+            height: 600px;
+            width: 75%;
+            padding: 2px;
+            overflow-x: hidden;
+            overflow-y: auto;
+            text-align: left;
+        }
+        div {
+            font-family: Verdana, sans-serif;
+        }
         </style>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     </head>
     <body>
         <h1>Team {{ data.team }} Chat</h1>
+        <form action="" onsubmit="sendMessage(event)">
+        <input type="text" id="messageText" autocomplete="off"/>
+        <button>Send</button>
+        </form>
         <div class="row">
             <div class="column">
-                <form action="" onsubmit="sendMessage(event)">
-                <input type="text" id="messageText" autocomplete="off"/>
-                <button>Send</button>
-                </form>
-                <textarea id="chatbox" name="chatbox" rows="50" cols="100">
-                </textarea>
+                <div id="chatbox" class="chatbox">
+                </div>
             </div>
             <div class="column">
                 <h2 id="queryTitle"></h2>
@@ -49,7 +65,10 @@
             ws.onmessage = function(event) {
                 if (event.data.startsWith("c:")) {
                     var text = event.data.substr(2);
-                    chatbox.innerHTML += "\n" + text;
+                    var newDiv = document.createElement("div");
+                    newDiv.innerHTML = text;
+                    chatbox.appendChild(newDiv);
+                    chatbox.scrollTop = chatbox.scrollHeight;
                 }
                 if (event.data.startsWith("hide:")) {
                     chatbox.style.visibility = "hidden";
