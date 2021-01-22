@@ -24,6 +24,17 @@ class ConnectionManager:
         self.direct_connections = {}
         self.admin = None
 
+    def get_registrants(self):
+        r = {}
+        for key in self.direct_connections.keys():
+            team = key[0]
+            name = key[1:]
+            if team in r:
+                r[team].append(name)
+            else:
+                r[team] = [name]
+        return r
+
     async def admin_connect(self, websocket: WebSocket):
         await websocket.accept()
         self.admin = websocket
@@ -138,10 +149,21 @@ async def admin_endpoint(websocket: WebSocket):
                 await manager.send_admin_message(str(responses))
             elif data == "disable":
                 await manager.broadcast("disable:")
-            elif data == "select rep":
+            elif data == "srep":
                 await select_rep()
     except WebSocketDisconnect:
         await manager.admin_disconnect(websocket)
+
+
+async def select_rep():
+    registrants = manager.get_registrants()
+    for team, members in registrants.items():
+        poll = [{
+            "question": "Who is the team representative?",
+            "options": members
+            }]
+        print(poll)
+        await manager.team_broadcast(int(team), "form:" + json.dumps(poll))
 
 
 class FormData(BaseModel):
