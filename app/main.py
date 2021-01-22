@@ -146,27 +146,31 @@ async def admin_endpoint(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_text()
+            cmd, args = (data + " ").split(" ", 1)
             await manager.send_admin_message("$ " + data)
-            if data == "votes":
+            if cmd == "votes":
                 await manager.send_admin_message(str(responses))
-            elif data == "calc":
+            elif cmd == "calc":
                 await manager.send_admin_message("Team votes")
                 await manager.send_admin_message(str(calc_votes()))
                 await manager.send_admin_message("Rep votes")
                 await manager.send_admin_message(str(rep_responses))
-            elif data == "disable":
+            elif cmd == "disable":
                 await manager.broadcast("disable:")
                 await manager.send_admin_message("executed")
-            elif data == "teams":
+            elif cmd == "teams":
                 await manager.send_admin_message(str(manager.get_registrants()))
-            elif data == "srep":
+            elif cmd == "srep":
                 await select_rep()
                 await manager.send_admin_message("executed")
-            elif data == "repexec":
+            elif cmd == "repexec":
                 await handle_rep_and_hide_chatbox()
                 await manager.send_admin_message("executed")
-            elif data == "show":
+            elif cmd == "show":
                 await manager.broadcast("show:")
+                await manager.send_admin_message("executed")
+            elif cmd == "broadcast":
+                await manager.broadcast("c:admin: " + args)
                 await manager.send_admin_message("executed")
     except WebSocketDisconnect:
         await manager.admin_disconnect(websocket)
