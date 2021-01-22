@@ -1,4 +1,25 @@
-{
+[{
     "question": "What is the 10th digit of pi?",
     "options": [1,2,3,5,9]
-}
+},
+{
+    "question": "The Mandelbrot set has what shape at its center?",
+    "options": [
+        "Circle",
+        "Fibonacci Spiral",
+        "Sierpinski Triangle",
+        "Cardioid",
+        "Nephroid"
+    ]
+},
+{
+    "question": "A determinant cannot be used to:",
+    "options": [
+        "Find the area between two exponential functions",
+        "Find the volume of a parallelepiped",
+        "Check if a system of polynomial equations has only one solution",
+        "Check if a matrix is invertible",
+        "Solve a system of polynomial equations"
+    ]
+}]
+# 3,4,1

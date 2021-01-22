@@ -14,6 +14,8 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 responses = {}
+rep_responses = {}
+reps = []
 
 templates = Jinja2Templates(directory="templates")
 
@@ -147,6 +149,11 @@ async def admin_endpoint(websocket: WebSocket):
             await manager.send_admin_message("$ " + data)
             if data == "votes":
                 await manager.send_admin_message(str(responses))
+            elif data == "calc":
+                await manager.send_admin_message("Team votes")
+                await manager.send_admin_message(str(calc_votes()))
+                await manager.send_admin_message("Rep votes")
+                await manager.send_admin_message(str(rep_responses))
             elif data == "disable":
                 await manager.broadcast("disable:")
                 await manager.send_admin_message("executed")
@@ -154,6 +161,12 @@ async def admin_endpoint(websocket: WebSocket):
                 await manager.send_admin_message(str(manager.get_registrants()))
             elif data == "srep":
                 await select_rep()
+                await manager.send_admin_message("executed")
+            elif data == "repexec":
+                await handle_rep_and_hide_chatbox()
+                await manager.send_admin_message("executed")
+            elif data == "show":
+                await manager.broadcast("show:")
                 await manager.send_admin_message("executed")
     except WebSocketDisconnect:
         await manager.admin_disconnect(websocket)
@@ -166,8 +179,24 @@ async def select_rep():
             "question": "Who is the team representative?",
             "options": members
             }]
-        print(poll)
         await manager.team_broadcast(int(team), "form:" + json.dumps(poll))
+
+
+def calc_votes():
+    vote = {}
+    for team, q_resps in responses.items():
+        vote[team] = {}
+        for q, votes in q_resps.items():
+            vote[team][q] = max(votes.items(), key=lambda x: x[1])[0]
+    return vote
+
+
+async def handle_rep_and_hide_chatbox():
+    reps.clear()
+    for team, vote in calc_votes().items():
+        rep = vote["q0"]
+        reps.append((int(team), rep))
+        await manager.send_direct_message(team, rep, "hide:")
 
 
 class FormData(BaseModel):
@@ -177,24 +206,27 @@ class FormData(BaseModel):
 @app.post("/admin_form")
 async def admin_form(data: FormData):
     responses.clear()
+    rep_responses.clear()
     await manager.broadcast(f"form:{data.data}")
 
 
 @app.post("/form")
 async def form(data: FormData, registry: Registry = Depends(require_registry)):
-    print(data.data)
     parsed_data = json.loads(data.data)
-    if registry.team not in responses:
-        responses[registry.team] = {}
-    record = responses[registry.team]
-    for k,v in parsed_data.items():
-        if k in record:
-            if v in record[k]:
-                record[k][v] += 1
+    if (registry.team, registry.name) in reps:
+        rep_responses[registry.team] = parsed_data
+    else:
+        if registry.team not in responses:
+            responses[registry.team] = {}
+        record = responses[registry.team]
+        for k,v in parsed_data.items():
+            if k in record:
+                if v in record[k]:
+                    record[k][v] += 1
+                else:
+                    record[k][v] = 1
             else:
-                record[k][v] = 1
-        else:
-            record[k] = { v: 1 }
+                record[k] = { v: 1 }
 
 
 @app.websocket("/ws/chat")
