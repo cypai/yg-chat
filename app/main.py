@@ -133,9 +133,13 @@ async def admin_endpoint(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_text()
+            await manager.send_admin_message("$ " + data)
             if data == "votes":
-                await manager.send_admin_message("$ " + data)
                 await manager.send_admin_message(str(responses))
+            elif data == "disable":
+                await manager.broadcast("disable:")
+            elif data == "select rep":
+                await select_rep()
     except WebSocketDisconnect:
         await manager.admin_disconnect(websocket)
 
@@ -146,10 +150,8 @@ class FormData(BaseModel):
 
 @app.post("/admin_form")
 async def admin_form(data: FormData):
-    print("hello")
     responses.clear()
     await manager.broadcast(f"form:{data.data}")
-    print(data.data)
 
 
 @app.post("/form")

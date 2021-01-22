@@ -89,7 +89,7 @@
                     form.appendChild(submit);
                 }
                 if (event.data.startsWith("disable:")) {
-                    form.elements.forEach(function (it) { it.disabled = true; });
+                    $("#pollForm :input").prop("disabled", true);
                 }
             }
             function sendMessage(event) {
@@ -112,6 +112,7 @@
                     type: "POST",
                     data: postData
                 });
+                $("#pollForm :input").prop("disabled", true);
             });
         </script>
     </body>
