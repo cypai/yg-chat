@@ -235,7 +235,7 @@ async def team_endpoint(websocket: WebSocket, registry: Registry = Depends(requi
     try:
         while True:
             data = await websocket.receive_text()
-            print(f"{registry.name}: {data}")
+            print(f"({registry.team}) {registry.name}: {data}")
             await manager.team_broadcast(registry.team, f"c:{registry.name}: {data}")
     except WebSocketDisconnect:
         manager.disconnect(registry.team, registry.name, websocket)
