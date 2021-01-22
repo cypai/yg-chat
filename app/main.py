@@ -149,8 +149,12 @@ async def admin_endpoint(websocket: WebSocket):
                 await manager.send_admin_message(str(responses))
             elif data == "disable":
                 await manager.broadcast("disable:")
+                await manager.send_admin_message("executed")
+            elif data == "teams":
+                await manager.send_admin_message(str(manager.get_registrants()))
             elif data == "srep":
                 await select_rep()
+                await manager.send_admin_message("executed")
     except WebSocketDisconnect:
         await manager.admin_disconnect(websocket)
 
