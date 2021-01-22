@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Team {{ data.team }}</title>
+        <style>
+        .row {
+            display: flex;
+        }
+        .column {
+            flex: 50%;
+        }
+        .imgrow {
+            width: 50%;
+            display: flex;
+        }
+        .imgrow > div:not(:last-child) {
+            margin-right: 0.5%;
+        }
+        img {
+            width: 100%;
+            height: auto;
+            vertical-align: middle;
+        }
+        </style>
+    </head>
+    <body>
+        <h1>Team {{ data.team }} Chat</h1>
+        <div class="row">
+            <div class="column">
+                <form action="" onsubmit="sendMessage(event)">
+                <input type="text" id="messageText" autocomplete="off"/>
+                <button>Send</button>
+                </form>
+                <ul id='messages'>
+                </ul>
+            </div>
+            <div class="column">
+            </div>
+        </div>
+        <script>
+            var client_id = Date.now()
+            var ws = new WebSocket(`ws://localhost:8000/ws/chat`);
+            ws.onmessage = function(event) {
+                if (event.data.startsWith("c")) {
+                    var text = event.data.substr(2);
+                    var messages = document.getElementById('messages');
+                    var message = document.createElement('li');
+                    var content = document.createTextNode(text);
+                    message.appendChild(content)
+                    messages.appendChild(message)
+                }
+            };
+            function sendMessage(event) {
+                var input = document.getElementById("messageText")
+                ws.send(input.value)
+                input.value = ''
+                event.preventDefault()
+            }
+        </script>
+    </body>
+</html>

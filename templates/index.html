@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>YG Games</title>
+    </head>
+    <body>
+        {% if data.registered %}
+        <p>Your name: {{ data.name }}</p>
+        <p>Your team number: {{ data.team }}</p>
+        <form action="/unregister">
+            <input type="submit" value="Unregister"/>
+        </form>
+        <br/>
+        <form action="/chat">
+            <input type="submit" value="Enter"/>
+        </form>
+        {% else %}
+        <p>Please register your name and team number here.</p>
+        <form action="/register">
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name"/><br/>
+            <label for="team">Team Number:</label>
+            <input type="text" id="team" name="team"/><br/>
+            <input type="submit" value="Submit"/>
+        </form>
+        {% endif %}
+    </body>
+</html>
