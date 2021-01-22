@@ -169,8 +169,11 @@ async def admin_endpoint(websocket: WebSocket):
             elif cmd == "show":
                 await manager.broadcast("show:")
                 await manager.send_admin_message("executed")
-            elif cmd == "broadcast":
+            elif cmd == "b":
                 await manager.broadcast("c:admin: " + args)
+                await manager.send_admin_message("executed")
+            elif cmd == "bimg":
+                await manager.broadcast("img:" + args)
                 await manager.send_admin_message("executed")
     except WebSocketDisconnect:
         await manager.admin_disconnect(websocket)

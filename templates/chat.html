@@ -70,6 +70,18 @@
                     chatbox.appendChild(newDiv);
                     chatbox.scrollTop = chatbox.scrollHeight;
                 }
+                if (event.data.startsWith("img:")) {
+                    var url = event.data.substr(4);
+                    var newDiv = document.createElement("div");
+                    newDiv.innerHTML = "admin:";
+                    chatbox.appendChild(newDiv);
+                    newDiv = document.createElement("div");
+                    var img = document.createElement("img");
+                    img.setAttribute("src", url);
+                    newDiv.appendChild(img);
+                    chatbox.appendChild(newDiv);
+                    chatbox.scrollTop = chatbox.scrollHeight;
+                }
                 if (event.data.startsWith("hide:")) {
                     chatbox.style.visibility = "hidden";
                 }
