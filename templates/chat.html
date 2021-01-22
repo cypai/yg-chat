@@ -59,6 +59,7 @@
                 }
                 if (event.data.startsWith("form:")) {
                     form.innerHTML = "";
+                    console.log(event.data.substr(5));
                     const questions = JSON.parse(event.data.substr(5));
                     for (var i = 0; i < questions.length; i++) {
                         const question = questions[i];
@@ -74,7 +75,7 @@
                             form.appendChild(radio);
                             var label = document.createElement("label");
                             label.setAttribute("for", `q${question.number}`);
-                            label.innerHTML = "ABCDEF"[j] + ": " + option;
+                            label.innerHTML = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[j] + ": " + option;
                             form.appendChild(label);
                             var br = document.createElement("br");
                             form.appendChild(br);

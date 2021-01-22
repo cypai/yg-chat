@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Admin Page</title>
+        <style>
+        .row {
+            display: flex;
+        }
+        .column {
+            flex: 50%;
+        }
+        .imgrow {
+            width: 50%;
+            display: flex;
+        }
+        .imgrow > div:not(:last-child) {
+            margin-right: 0.5%;
+        }
+        img {
+            width: 100%;
+            height: auto;
+            vertical-align: middle;
+        }
+        </style>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    </head>
+    <body>
+        <h1>Admin Page</h1>
+        <div class="row">
+            <div class="column">
+                <form action="" onsubmit="sendMessage(event)">
+                <input type="text" id="messageText" autocomplete="off"/>
+                <button>Send</button>
+                </form>
+                <textarea id="chatbox" name="chatbox" rows="50" cols="100">
+                </textarea>
+            </div>
+            <div class="column">
+                <h2 id="queryTitle"></h2>
+                <form id="adminForm" action="">
+                    <input type="text" id="formText"/>
+                    <button>Send</button>
+                </form>
+            </div>
+        </div>
+        <script>
+            var ws = new WebSocket(`ws://localhost:8000/ws/admin`);
+            var chatbox = document.getElementById("chatbox");
+            var form = document.getElementById("pollForm");
+            ws.onmessage = function(event) {
+                var text = event.data;
+                chatbox.innerHTML += "\n" + text;
+            }
+            function sendMessage(event) {
+                var input = document.getElementById("messageText")
+                ws.send(input.value)
+                input.value = ''
+                event.preventDefault()
+            }
+            $("#adminForm").on("submit", function (e) {
+                e.preventDefault();
+                const json = $("#formText").val();
+                postData = `{ "data": ${JSON.stringify(json)} }`;
+                $.ajax({
+                    url: "/admin_form",
+                    type: "POST",
+                    data: postData
+                });
+            });
+        </script>
+    </body>
+</html>

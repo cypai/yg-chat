@@ -13,7 +13,7 @@ from starlette.templating import Jinja2Templates
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-team_progress = TTLCache(100, 36000)
+responses = {}
 
 templates = Jinja2Templates(directory="templates")
 
@@ -21,21 +21,35 @@ class ConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []
         self.team_connections = {}
+        self.direct_connections = {}
+        self.admin = None
 
-    async def connect(self, team: int, websocket: WebSocket):
+    async def admin_connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.admin = websocket
+
+    async def admin_disconnect(self, websocket: WebSocket):
+        self.admin = None
+
+    async def connect(self, team: int, name: str, websocket: WebSocket):
         await websocket.accept()
         self.active_connections.append(websocket)
         if team in self.team_connections:
             self.team_connections[team].append(websocket)
         else:
             self.team_connections[team] = [websocket]
+        self.direct_connections[f"{team}{name}"] = websocket
 
-    def disconnect(self, team: int, websocket: WebSocket):
+    def disconnect(self, team: int, name: str, websocket: WebSocket):
         self.active_connections.remove(websocket)
         self.team_connections[team].remove(websocket)
+        del self.direct_connections[f"{team}{name}"]
 
-    async def send_direct_message(self, message: str, websocket: WebSocket):
-        await websocket.send_text(message)
+    async def send_direct_message(self, team: int, name: str, message: str):
+        await self.direct_connections[f"{team}{name}"].send_text(message)
+
+    async def send_admin_message(self, message: str):
+        await self.admin.send_text(message)
 
     async def team_broadcast(self, team: int, message: str):
         for connection in self.team_connections[team]:
@@ -110,41 +124,59 @@ async def chat(request: Request, registry: Registry = Depends(require_registry))
 
 @app.get("/admin")
 async def admin(request: Request):
-    q = [
-            {
-                "question": "What's pi?",
-                "options": [
-                    "3.14", "2"
-                ]
-            },
-            {
-                "question": "What's phi?",
-                "options": [
-                    "123", "1"
-                ]
-            }
-        ]
-    msg = "form:" + json.dumps(q)
-    await manager.broadcast(msg)
-    return ""
+    return templates.TemplateResponse("admin.html", {"request": request})
+
+
+@app.websocket("/ws/admin")
+async def admin_endpoint(websocket: WebSocket):
+    await manager.admin_connect(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            if data == "votes":
+                await manager.send_admin_message("$ " + data)
+                await manager.send_admin_message(str(responses))
+    except WebSocketDisconnect:
+        await manager.admin_disconnect(websocket)
 
 
 class FormData(BaseModel):
     data: str
 
 
+@app.post("/admin_form")
+async def admin_form(data: FormData):
+    print("hello")
+    responses.clear()
+    await manager.broadcast(f"form:{data.data}")
+    print(data.data)
+
+
 @app.post("/form")
 async def form(data: FormData, registry: Registry = Depends(require_registry)):
     print(data.data)
+    parsed_data = json.loads(data.data)
+    if registry.team not in responses:
+        responses[registry.team] = {}
+    record = responses[registry.team]
+    for k,v in parsed_data.items():
+        if k in record:
+            if v in record[k]:
+                record[k][v] += 1
+            else:
+                record[k][v] = 1
+        else:
+            record[k] = { v: 1 }
 
 
 @app.websocket("/ws/chat")
 async def team_endpoint(websocket: WebSocket, registry: Registry = Depends(require_registry)):
-    await manager.connect(registry.team, websocket)
+    await manager.connect(registry.team, registry.name, websocket)
     try:
         while True:
             data = await websocket.receive_text()
+            print(f"{registry.name}: {data}")
             await manager.team_broadcast(registry.team, f"c:{registry.name}: {data}")
     except WebSocketDisconnect:
-        manager.disconnect(registry.team, websocket)
+        manager.disconnect(registry.team, registry.name, websocket)
         await manager.team_broadcast(registry.team, f"c:{registry.name} has disconnected")
