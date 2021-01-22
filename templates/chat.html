@@ -22,6 +22,7 @@
             vertical-align: middle;
         }
         </style>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     </head>
     <body>
         <h1>Team {{ data.team }} Chat</h1>
@@ -31,31 +32,86 @@
                 <input type="text" id="messageText" autocomplete="off"/>
                 <button>Send</button>
                 </form>
-                <ul id='messages'>
-                </ul>
+                <textarea id="chatbox" name="chatbox" rows="50" cols="100">
+                </textarea>
             </div>
             <div class="column">
+                <h2 id="queryTitle"></h2>
+                <form id="pollForm" action="">
+                </form>
             </div>
         </div>
         <script>
             var client_id = Date.now()
             var ws = new WebSocket(`ws://localhost:8000/ws/chat`);
+            var chatbox = document.getElementById("chatbox");
+            var form = document.getElementById("pollForm");
             ws.onmessage = function(event) {
-                if (event.data.startsWith("c")) {
+                if (event.data.startsWith("c:")) {
                     var text = event.data.substr(2);
-                    var messages = document.getElementById('messages');
-                    var message = document.createElement('li');
-                    var content = document.createTextNode(text);
-                    message.appendChild(content)
-                    messages.appendChild(message)
+                    chatbox.innerHTML += "\n" + text;
                 }
-            };
+                if (event.data.startsWith("hide:")) {
+                    chatbox.style.visibility = "hidden";
+                }
+                if (event.data.startsWith("show:")) {
+                    chatbox.style.visibility = "visible";
+                }
+                if (event.data.startsWith("form:")) {
+                    form.innerHTML = "";
+                    const questions = JSON.parse(event.data.substr(5));
+                    for (var i = 0; i < questions.length; i++) {
+                        const question = questions[i];
+                        var questionText = document.createElement("p");
+                        questionText.innerHTML = question.question;
+                        form.appendChild(questionText);
+                        for (var j = 0; j < question.options.length; j++) {
+                            const option = question.options[j];
+                            var radio = document.createElement("input");
+                            radio.setAttribute("type", "radio");
+                            radio.setAttribute("name", `q${i}`);
+                            radio.setAttribute("value", option);
+                            form.appendChild(radio);
+                            var label = document.createElement("label");
+                            label.setAttribute("for", `q${question.number}`);
+                            label.innerHTML = "ABCDEF"[j] + ": " + option;
+                            form.appendChild(label);
+                            var br = document.createElement("br");
+                            form.appendChild(br);
+                        }
+                    }
+                    var br = document.createElement("br");
+                    form.appendChild(br);
+                    var submit = document.createElement("input");
+                    submit.setAttribute("type", "submit");
+                    submit.setAttribute("value", "Submit");
+                    form.appendChild(submit);
+                }
+                if (event.data.startsWith("disable:")) {
+                    form.elements.forEach(function (it) { it.disabled = true; });
+                }
+            }
             function sendMessage(event) {
                 var input = document.getElementById("messageText")
                 ws.send(input.value)
                 input.value = ''
                 event.preventDefault()
             }
+
+            $("#pollForm").on("submit", function (e) {
+                e.preventDefault();
+                var arr = $(this).serializeArray();
+                var json = {}
+                $.each(arr, function() {
+                    json[this.name] = this.value || '';
+                });
+                postData = `{ "data": ${JSON.stringify(JSON.stringify(json))} }`;
+                $.ajax({
+                    url: "/form",
+                    type: "POST",
+                    data: postData
+                });
+            });
         </script>
     </body>
 </html>

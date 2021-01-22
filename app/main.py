@@ -1,6 +1,8 @@
 from datetime import datetime
 import random
 import string
+import json
+from pydantic import BaseModel
 
 from cachetools import TTLCache
 from fastapi import Cookie, Depends, FastAPI, Form, Request, Response, WebSocket, WebSocketDisconnect
@@ -104,6 +106,36 @@ async def unregistered_handler(request: Request, ex: UnregisteredException):
 @app.get("/chat")
 async def chat(request: Request, registry: Registry = Depends(require_registry)):
     return templates.TemplateResponse("chat.html", {"request": request, "data": {"team": registry.team}})
+
+
+@app.get("/admin")
+async def admin(request: Request):
+    q = [
+            {
+                "question": "What's pi?",
+                "options": [
+                    "3.14", "2"
+                ]
+            },
+            {
+                "question": "What's phi?",
+                "options": [
+                    "123", "1"
+                ]
+            }
+        ]
+    msg = "form:" + json.dumps(q)
+    await manager.broadcast(msg)
+    return ""
+
+
+class FormData(BaseModel):
+    data: str
+
+
+@app.post("/form")
+async def form(data: FormData, registry: Registry = Depends(require_registry)):
+    print(data.data)
 
 
 @app.websocket("/ws/chat")
