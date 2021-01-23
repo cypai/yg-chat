@@ -155,11 +155,23 @@ async def admin_endpoint(websocket: WebSocket):
             await manager.send_admin_message("$ " + data)
             if cmd == "votes":
                 await manager.send_admin_message(str(responses))
-            elif cmd == "calc":
+            elif cmd == "calc" or cmd == "bcalc":
                 await manager.send_admin_message("Team votes")
-                await manager.send_admin_message(str(calc_votes()))
+                team_votes = calc_votes()
+                await manager.send_admin_message(str(team_votes))
                 await manager.send_admin_message("Rep votes")
                 await manager.send_admin_message(str(rep_responses))
+                if cmd == "bcalc":
+                    for t, votes in team_votes.items():
+                        s = "c:admin: Your team voted for:"
+                        for v in votes.values():
+                            s += f"<br/>{v}"
+                        await manager.team_broadcast(t, s)
+                    for t, votes in rep_responses.items():
+                        s = "c:admin: Your rep voted for:"
+                        for v in votes.values():
+                            s += f"<br/>{v}"
+                        await manager.team_broadcast(t, s)
             elif cmd == "disable":
                 await manager.broadcast("disable:")
                 await manager.send_admin_message("executed")
@@ -236,6 +248,7 @@ async def handle_rep_and_hide_chatbox():
         rep = vote["q0"]
         reps.append((int(team), rep))
         await manager.send_direct_message(team, rep, "hide:")
+        await manager.team_broadcast(team, f"c:admin: Your rep is {rep}")
 
 
 class FormData(BaseModel):
