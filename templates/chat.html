@@ -52,7 +52,7 @@
                 </div>
             </div>
             <div class="column">
-                <h2 id="queryTitle"></h2>
+                <h2 id="timer">Time left: 0s</h2>
                 <form id="pollForm" action="">
                 </form>
             </div>
@@ -61,8 +61,22 @@
             var client_id = Date.now()
             var ws = new WebSocket(`ws://localhost:8000/ws/chat`);
             var chatbox = document.getElementById("chatbox");
+            var timer = document.getElementById("timer");
             var form = document.getElementById("pollForm");
+            var secs = 0;
+            setInterval(function() {
+                if (secs >= 0) {
+                    if (secs == 0) {
+                        $("#pollForm :input").prop("disabled", true);
+                    }
+                    timer.innerHTML = `Time left: ${secs}s`;
+                    secs -= 1;
+                }
+            }, 1000);
             ws.onmessage = function(event) {
+                if (event.data.startsWith("clearchat:")) {
+                    chatbox.innerHTML = "";
+                }
                 if (event.data.startsWith("c:")) {
                     var text = event.data.substr(2);
                     var newDiv = document.createElement("div");
@@ -87,6 +101,9 @@
                 }
                 if (event.data.startsWith("show:")) {
                     chatbox.style.visibility = "visible";
+                }
+                if (event.data.startsWith("timer:")) {
+                    secs = Number(event.data.substr(6));
                 }
                 if (event.data.startsWith("form:")) {
                     form.innerHTML = "";
@@ -121,6 +138,7 @@
                 }
                 if (event.data.startsWith("disable:")) {
                     $("#pollForm :input").prop("disabled", true);
+                    secs = 0;
                 }
             }
             function sendMessage(event) {
