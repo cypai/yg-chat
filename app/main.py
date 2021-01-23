@@ -16,6 +16,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 responses = {}
 rep_responses = {}
 reps = []
+score = {}
 
 templates = Jinja2Templates(directory="templates")
 
@@ -51,6 +52,8 @@ class ConnectionManager:
             self.team_connections[team].append(websocket)
         else:
             self.team_connections[team] = [websocket]
+        if team not in score:
+            score[team] = 0
         self.direct_connections[f"{team}{name}"] = websocket
 
     def disconnect(self, team: int, name: str, websocket: WebSocket):
@@ -163,6 +166,8 @@ async def admin_endpoint(websocket: WebSocket):
             elif cmd == "srep":
                 await select_rep()
                 await manager.send_admin_message("executed")
+            elif cmd == "reps":
+                await manager.send_admin_message(str(reps))
             elif cmd == "repexec":
                 await handle_rep_and_hide_chatbox()
                 await manager.send_admin_message("executed")
@@ -181,6 +186,25 @@ async def admin_endpoint(websocket: WebSocket):
             elif cmd == "timer":
                 await manager.broadcast("timer:" + args)
                 await manager.send_admin_message("executed")
+            elif cmd == "score":
+                await manager.send_admin_message(str(score))
+            elif cmd == "iscore":
+                a = args.split(" ")
+                team = int(a[0])
+                score[team] += int(a[1])
+                await manager.send_admin_message("executed")
+            elif cmd == "sscore":
+                a = args.split(" ")
+                team = int(a[0])
+                score[team] = int(a[1])
+                await manager.send_admin_message("executed")
+            elif cmd == "bscore":
+                score_str = ""
+                for t,s in sorted(score.items(), key=lambda x: x[1], reverse=True):
+                    score_str += f"Team {t}: {s}<br />"
+                await manager.broadcast("score:" + score_str)
+                await manager.send_admin_message("executed")
+
     except WebSocketDisconnect:
         await manager.admin_disconnect(websocket)
 

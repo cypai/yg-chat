@@ -3,19 +3,6 @@
     <head>
         <title>Team {{ data.team }}</title>
         <style>
-        .row {
-            display: flex;
-        }
-        .column {
-            flex: 50%;
-        }
-        .imgrow {
-            width: 50%;
-            display: flex;
-        }
-        .imgrow > div:not(:last-child) {
-            margin-right: 0.5%;
-        }
         img {
             width: 100%;
             height: auto;
@@ -28,7 +15,7 @@
             border-style: inset;
             border-width: 2px;
             height: 600px;
-            width: 75%;
+            width: 95%;
             padding: 2px;
             overflow-x: hidden;
             overflow-y: auto;
@@ -46,15 +33,18 @@
         <input type="text" id="messageText" autocomplete="off"/>
         <button>Send</button>
         </form>
-        <div class="row">
-            <div class="column">
-                <div id="chatbox" class="chatbox">
-                </div>
+        <div class="column" style="float:left; width: 50%;">
+            <div id="chatbox" class="chatbox">
             </div>
-            <div class="column">
-                <h2 id="timer">Time left: 0s</h2>
-                <form id="pollForm" action="">
-                </form>
+        </div>
+        <div class="column" style="float:left; width: 25%;">
+            <h2 id="timer">Time left: 0s</h2>
+            <form id="pollForm" action="">
+            </form>
+        </div>
+        <div class="column" style="float:left; width: 25%;">
+            <h2 id="scoreHeader">Score</h2>
+            <div id="scorebox">
             </div>
         </div>
         <script>
@@ -62,6 +52,7 @@
             var ws = new WebSocket(`ws://localhost:8000/ws/chat`);
             var chatbox = document.getElementById("chatbox");
             var timer = document.getElementById("timer");
+            var scorebox = document.getElementById("scorebox");
             var form = document.getElementById("pollForm");
             var secs = 0;
             setInterval(function() {
@@ -104,6 +95,10 @@
                 }
                 if (event.data.startsWith("timer:")) {
                     secs = Number(event.data.substr(6));
+                }
+                if (event.data.startsWith("score:")) {
+                    console.log(event.data.substr(6));
+                    scorebox.innerHTML = event.data.substr(6);
                 }
                 if (event.data.startsWith("form:")) {
                     form.innerHTML = "";
