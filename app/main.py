@@ -47,6 +47,7 @@ class ConnectionManager:
 
     async def connect(self, team: int, name: str, websocket: WebSocket):
         await websocket.accept()
+        print(f"({team}) {name} connected")
         self.active_connections.append(websocket)
         if team in self.team_connections:
             self.team_connections[team].append(websocket)
@@ -57,6 +58,7 @@ class ConnectionManager:
         self.direct_connections[f"{team}{name}"] = websocket
 
     def disconnect(self, team: int, name: str, websocket: WebSocket):
+        print(f"({team}) {name} disconnected")
         self.active_connections.remove(websocket)
         self.team_connections[team].remove(websocket)
         del self.direct_connections[f"{team}{name}"]
