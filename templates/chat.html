@@ -50,7 +50,7 @@
         </div>
         <script>
             var client_id = Date.now()
-            var ws = new WebSocket(`ws://localhost:8000/ws/chat`);
+            var ws = new WebSocket(`ws://localhost:8000/ws/{{ data.team }}/{{ data.name }}`);
             var chatbox = document.getElementById("chatbox");
             var timer = document.getElementById("timer");
             var scorebox = document.getElementById("scorebox");

@@ -137,7 +137,10 @@ async def unregistered_handler(request: Request, ex: UnregisteredException):
 
 @app.get("/chat")
 async def chat(request: Request, registry: Registry = Depends(require_registry)):
-    return templates.TemplateResponse("chat.html", {"request": request, "data": {"team": registry.team}})
+    return templates.TemplateResponse("chat.html", {
+            "request": request,
+            "data": {"team": registry.team, "name": registry.name}
+        })
 
 
 @app.get("/admin")
@@ -281,14 +284,14 @@ async def form(data: FormData, registry: Registry = Depends(require_registry)):
                 record[k] = { v: 1 }
 
 
-@app.websocket("/ws/chat")
-async def team_endpoint(websocket: WebSocket, registry: Registry = Depends(require_registry)):
-    await manager.connect(registry.team, registry.name, websocket)
+@app.websocket("/ws/{team}/{name}")
+async def team_endpoint(websocket: WebSocket, team: int, name: str):
+    await manager.connect(team, name, websocket)
     try:
         while True:
             data = await websocket.receive_text()
-            print(f"({registry.team}) {registry.name}: {data}")
-            await manager.team_broadcast(registry.team, f"c:{registry.name}: {data}")
+            print(f"({team}) {name}: {data}")
+            await manager.team_broadcast(team, f"c:{name}: {data}")
     except WebSocketDisconnect:
-        manager.disconnect(registry.team, registry.name, websocket)
-        await manager.team_broadcast(registry.team, f"c:{registry.name} has disconnected")
+        manager.disconnect(team, name, websocket)
+        await manager.team_broadcast(team, f"c:{name} has disconnected")
